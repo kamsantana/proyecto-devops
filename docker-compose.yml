@@ -12,11 +12,18 @@ services:
     container_name: traefik
     restart: always
     command:
+      - "--log.level=INFO"
       - "--providers.docker=true"
-      - "--providers.docker.endpoint=unix:///var/run/docker.sock"
+      # 👇 SOLUCIÓN DE RAÍZ: Forzamos a Traefik a usar la API moderna de tu Docker
+      - "--providers.docker.endpoint=unix:///var/run/docker.sock?apiVersion=1.40"
       - "--providers.docker.exposedbydefault=false"
+      # Entrada HTTP (Puerto 80) con Redirección Automática Obligatoria a HTTPS
       - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
+      # Entrada HTTPS (Puerto 443)
       - "--entrypoints.websecure.address=:443"
+      # Configuración de Let's Encrypt
       - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
       - "--certificatesresolvers.myresolver.acme.email=kam.santana@yavirac.edu.ec"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
