@@ -11,13 +11,15 @@ services:
     image: traefik:v2.10
     container_name: traefik
     restart: always
+    environment:
+      - DOCKER_API_VERSION=1.40 # 👈 ARREGLO CRUCIAL: Fuerza la compatibilidad con el Docker de tu VPS
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
       - "--entrypoints.websecure.address=:443"
       - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
-      - "--certificatesresolvers.myresolver.acme.email=kam.santana@yavirac.edu.ec" # ¡Tu correo listo!
+      - "--certificatesresolvers.myresolver.acme.email=kam.santana@yavirac.edu.ec"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
     ports:
       - "80:80"
