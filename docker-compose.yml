@@ -7,32 +7,39 @@ networks:
     driver: bridge
 
 services:
+
   traefik:
-    image: traefik:v2.10
+    image: traefik:v3.5
     container_name: traefik
     restart: always
     command:
       - "--log.level=INFO"
       - "--providers.docker=true"
-      # 👇 SOLUCIÓN DE RAÍZ: Forzamos a Traefik a usar la API moderna de tu Docker
-      - "--providers.docker.endpoint=unix:///var/run/docker.sock?apiVersion=1.40"
       - "--providers.docker.exposedbydefault=false"
-      # Entrada HTTP (Puerto 80) con Redirección Automática Obligatoria a HTTPS
+
+      # HTTP
       - "--entrypoints.web.address=:80"
+
+      # Redirección HTTP -> HTTPS
       - "--entrypoints.web.http.redirections.entryPoint.to=websecure"
       - "--entrypoints.web.http.redirections.entryPoint.scheme=https"
-      # Entrada HTTPS (Puerto 443)
+
+      # HTTPS
       - "--entrypoints.websecure.address=:443"
-      # Configuración de Let's Encrypt
+
+      # Let's Encrypt
       - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
       - "--certificatesresolvers.myresolver.acme.email=kam.santana@yavirac.edu.ec"
       - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+
     ports:
       - "80:80"
       - "443:443"
+
     volumes:
       - "./letsencrypt:/letsencrypt"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
     networks:
       - traefik-public
 
@@ -40,15 +47,19 @@ services:
     image: portainer/portainer-ce:latest
     container_name: portainer_santana
     restart: always
+
     volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock"
-      - "portainer_data:/data"
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.portainer.rule=Host(`portainersantana.byronrm.com`)"
       - "traefik.http.routers.portainer.entrypoints=websecure"
       - "traefik.http.routers.portainer.tls.certresolver=myresolver"
       - "traefik.http.services.portainer.loadbalancer.server.port=9000"
+      - "traefik.docker.network=traefik-public"
+
     networks:
       - traefik-public
 
@@ -56,12 +67,15 @@ services:
     build: ./frontend
     container_name: frontend_santana
     restart: always
+
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`santana.byronrm.com`)"
       - "traefik.http.routers.frontend.entrypoints=websecure"
       - "traefik.http.routers.frontend.tls.certresolver=myresolver"
       - "traefik.http.services.frontend.loadbalancer.server.port=80"
+      - "traefik.docker.network=traefik-public"
+
     networks:
       - traefik-public
 
@@ -69,11 +83,13 @@ services:
     build: ./backend
     container_name: backend_santana
     restart: always
+
     environment:
-      - DB_HOST=postgres_db
-      - DB_USER=postgres
-      - DB_PASSWORD=1234
-      - DB_NAME=midatabase
+      DB_HOST: postgres_db
+      DB_USER: postgres
+      DB_PASSWORD: 1234
+      DB_NAME: midatabase
+
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.backend.rule=Host(`backsantana.byronrm.com`)"
@@ -81,6 +97,7 @@ services:
       - "traefik.http.routers.backend.tls.certresolver=myresolver"
       - "traefik.http.services.backend.loadbalancer.server.port=5000"
       - "traefik.docker.network=traefik-public"
+
     networks:
       - traefik-public
       - db-private
@@ -89,12 +106,15 @@ services:
     image: postgres:15
     container_name: postgres_db
     restart: always
+
     environment:
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=1234
-      - POSTGRES_DB=midatabase
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: midatabase
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
+
     networks:
       - db-private
 
@@ -102,9 +122,11 @@ services:
     image: dpage/pgadmin4
     container_name: pgadmin_santana
     restart: always
+
     environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
-      - PGADMIN_DEFAULT_PASSWORD=adminpass
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: adminpass
+
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.pgadmin.rule=Host(`pgsantana.byronrm.com`)"
@@ -112,6 +134,7 @@ services:
       - "traefik.http.routers.pgadmin.tls.certresolver=myresolver"
       - "traefik.http.services.pgadmin.loadbalancer.server.port=80"
       - "traefik.docker.network=traefik-public"
+
     networks:
       - traefik-public
       - db-private

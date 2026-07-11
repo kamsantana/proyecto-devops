@@ -10,43 +10,51 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout del código
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Ejecutar despliegue automatizado en VPS (Contraseña)
+      - name: Deploy al VPS
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           port: ${{ secrets.VPS_SSH_PORT }}
+
           script: |
-            # 0. Verificar e instalar Git si no existe en el VPS
-            if ! command -v git &> /dev/null; then
-              echo "Git no encontrado. Instalando..."
-              sudo apt-get update && sudo apt-get install -y git
+
+            if ! command -v git >/dev/null; then
+              apt update
+              apt install -y git
             fi
 
-            # 🛠️ SOLUCCIÓN CRÍTICA: Forzar la remoción de cualquier contenedor llamado traefik colgado en el sistema
-            if [ "$(docker ps -a -q -f name=^traefik$)" ]; then
-              echo "Removiendo contenedor conflictivo previo..."
+            docker compose version
+
+            if [ "$(docker ps -aq -f name=^traefik$)" ]; then
               docker rm -f traefik || true
             fi
 
-            # 1. Moverse a la carpeta o clonar si es la primera ejecución
-            if [ ! -d "proyecto" ]; then
+            if [ ! -d proyecto ]; then
               git clone https://github.com/${{ github.repository }} proyecto
-              cd proyecto
-            else
-              cd proyecto
-              docker compose down || true
-              git reset --hard HEAD
-              git pull origin main
             fi
 
-            # 2. Asegurar requerimientos de infraestructura en el VPS
-            docker network create traefik-public || true
-            mkdir -p letsencrypt
+            cd proyecto
 
-            # 3. Reconstruir imágenes y encender el ecosistema limpio
-            docker compose up -d --build
+            git fetch origin
+            git reset --hard origin/main
+
+            docker compose down || true
+
+            docker network inspect traefik-public >/dev/null 2>&1 || docker network create traefik-public
+
+            mkdir -p letsencrypt
+            touch letsencrypt/acme.json
+            chmod 600 letsencrypt/acme.json
+
+            docker compose pull || true
+            docker compose build --no-cache
+            docker compose up -d
+
+            docker image prune -f
+
+            docker ps

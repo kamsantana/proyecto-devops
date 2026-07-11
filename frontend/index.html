@@ -1,285 +1,221 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Usuarios - Santana</title>
-    <style>
-        :root {
-            --primary: #4f46e5;
-            --primary-hover: #4338ca;
-            --bg: #f8fafc;
-            --card-bg: #ffffff;
-            --text: #0f172a;
-            --text-secondary: #64748b;
-            --border: #e2e8f0;
-            --success: #10b981;
-            --danger: #ef4444;
-        }
-
-        body { 
-            font-family: 'Segoe UI', system-ui, sans-serif; 
-            background: var(--bg); 
-            color: var(--text);
-            margin: 0; 
-            padding: 40px 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 1000px;
-            display: grid;
-            grid-template-columns: 350px 1fr;
-            gap: 30px;
-        }
-
-        @media (max-width: 850px) {
-            .container { grid-template-columns: 1fr; }
-        }
-
-        .card { 
-            background: var(--card-bg); 
-            padding: 30px; 
-            border-radius: 12px; 
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
-            border: 1px solid var(--border);
-            height: fit-content;
-        }
-
-        h2, h3 { margin-top: 0; color: var(--text); font-weight: 700; }
-        h2 { text-align: center; margin-bottom: 25px; }
-
-        label { display: block; margin-bottom: 6px; font-size: 13px; font-weight: 600; color: var(--text-secondary); }
-        input { 
-            width: 100%; 
-            padding: 10px 14px; 
-            margin-bottom: 15px; 
-            border: 1px solid var(--border); 
-            border-radius: 8px; 
-            box-sizing: border-box; 
-            font-size: 14px;
-            transition: all 0.2s;
-        }
-        input:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
-
-        button { 
-            width: 100%; 
-            padding: 12px; 
-            background: var(--primary); 
-            color: white; 
-            border: none; 
-            border-radius: 8px; 
-            font-size: 15px; 
-            cursor: pointer; 
-            font-weight: 600;
-            transition: background 0.2s;
-        }
-        button:hover { background: var(--primary-hover); }
-        
-        .btn-secondary { background: var(--text-secondary); margin-top: 8px; display: none; }
-        .btn-secondary:hover { background: #475569; }
-
-        #mensaje { text-align: center; margin-top: 15px; font-weight: 600; font-size: 14px; min-height: 20px; }
-
-        /* Estilos de la Tabla */
-        .table-container {
-            background: var(--card-bg);
-            border-radius: 12px;
-            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-            border: 1px solid var(--border);
-            overflow-x: auto;
-            padding: 20px;
-        }
-
-        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 14px; }
-        th { background: #f1f5f9; padding: 12px 16px; font-weight: 600; color: var(--text-secondary); border-bottom: 1px solid var(--border); }
-        td { padding: 14px 16px; border-bottom: 1px solid var(--border); color: var(--text); }
-        tr:hover td { background: #f8fafc; }
-
-        .actions { display: flex; gap: 8px; }
-        .btn-table { width: auto; padding: 6px 12px; font-size: 12px; border-radius: 6px; }
-        .btn-edit { background: var(--success); }
-        .btn-edit:hover { background: #059669; }
-        .btn-delete { background: var(--danger); }
-        .btn-delete:hover { background: #dc2626; }
-    </style>
-</head>
-<body>
-
-<div class="container">
-    <div class="card">
-        <h2 id="formTitle">Nuevo Registro</h2>
-        <form id="formRegistro">
-            <input type="hidden" id="userId">
-            
-            <label for="cedula">Cédula / Pasaporte</label>
-            <input type="text" id="cedula" required>
-
-            <label for="nombre">Nombre Completo</label>
-            <input type="text" id="nombre" required>
-
-            <label for="email">Correo Electrónico</label>
-            <input type="email" id="email" required>
-
-            <label for="edad">Edad</label>
-            <input type="number" id="edad" min="1" max="120" required>
-
-            <label for="ciudad">Ciudad</label>
-            <input type="text" id="ciudad" required>
-
-            <label for="telefono">Número de Teléfono</label>
-            <input type="text" id="telefono" required>
-
-            <button type="submit" id="btnSubmit">Guardar Registro</button>
-            <button type="button" id="btnCancelar" class="btn-secondary" onclick="resetForm()">Cancelar Edición</button>
-        </form>
-        <div id="mensaje"></div>
-    </div>
-
-    <div class="table-container">
-        <h3>Usuarios Registrados</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Cédula</th>
-                    <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Edad</th>
-                    <th>Ciudad</th>
-                    <th>Teléfono</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody id="tablaUsuarios">
-                </tbody>
-        </table>
-    </div>
-</div>
-
 <script>
-    const BACKEND_URL = "https://backsantana.byronrm.com/usuarios";
-    const mensajeDiv = document.getElementById('mensaje');
+const API = "https://backsantana.byronrm.com";
+const BACKEND_URL = `${API}/usuarios`;
 
-    // Cargar usuarios al abrir la página
-    document.addEventListener('DOMContentLoaded', obtenerUsuarios);
+const mensajeDiv = document.getElementById("mensaje");
+const tbody = document.getElementById("tablaUsuarios");
 
-    function mostrarMensaje(texto, esError = false) {
-        mensajeDiv.style.color = esError ? "var(--danger)" : "var(--success)";
-        mensajeDiv.innerText = texto;
-        setTimeout(() => mensajeDiv.innerText = "", 4000);
-    }
+document.addEventListener("DOMContentLoaded", obtenerUsuarios);
 
-    // OBTENER (READ)
-    async function obtenerUsuarios() {
-        try {
-            const res = await fetch(BACKEND_URL);
-            const usuarios = await res.json();
-            const tbody = document.getElementById('tablaUsuarios');
-            tbody.innerHTML = '';
+function mostrarMensaje(texto, error = false) {
+    mensajeDiv.innerHTML = texto;
+    mensajeDiv.style.color = error ? "#ef4444" : "#10b981";
 
-            usuarios.forEach(u => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${u.cedula}</td>
-                        <td>${u.nombre}</td>
-                        <td>${u.email}</td>
-                        <td>${u.edad}</td>
-                        <td>${u.ciudad}</td>
-                        <td>${u.telefono}</td>
-                        <td class="actions">
-                            <button class="btn-table btn-edit" onclick="prepararEdicion(${u.id}, '${u.cedula}', '${u.nombre}', '${u.email}', ${u.edad}, '${u.ciudad}', '${u.telefono}')">Editar</button>
-                            <button class="btn-table btn-delete" onclick="eliminarUsuario(${u.id})">Borrar</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        } catch (error) {
-            console.error("Error al obtener datos:", error);
+    setTimeout(() => {
+        mensajeDiv.innerHTML = "";
+    }, 3000);
+}
+
+function limpiarFormulario() {
+    document.getElementById("formRegistro").reset();
+    document.getElementById("userId").value = "";
+
+    document.getElementById("formTitle").innerHTML = "Nuevo Registro";
+    document.getElementById("btnSubmit").innerHTML = "Guardar Registro";
+    document.getElementById("btnCancelar").style.display = "none";
+}
+
+async function obtenerUsuarios() {
+
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="7" style="text-align:center">
+                Cargando usuarios...
+            </td>
+        </tr>
+    `;
+
+    try {
+
+        const respuesta = await fetch(BACKEND_URL);
+
+        if (!respuesta.ok)
+            throw new Error("No fue posible conectar.");
+
+        const usuarios = await respuesta.json();
+
+        tbody.innerHTML = "";
+
+        if (usuarios.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="7" style="text-align:center">
+                        No existen registros.
+                    </td>
+                </tr>
+            `;
+            return;
         }
+
+        usuarios.forEach(usuario => {
+
+            const fila = document.createElement("tr");
+
+            fila.innerHTML = `
+                <td>${usuario.cedula}</td>
+                <td>${usuario.nombre}</td>
+                <td>${usuario.email}</td>
+                <td>${usuario.edad}</td>
+                <td>${usuario.ciudad}</td>
+                <td>${usuario.telefono}</td>
+
+                <td class="actions">
+
+                    <button class="btn-table btn-edit">
+                        Editar
+                    </button>
+
+                    <button class="btn-table btn-delete">
+                        Borrar
+                    </button>
+
+                </td>
+            `;
+
+            fila.querySelector(".btn-edit").onclick = () => prepararEdicion(usuario);
+
+            fila.querySelector(".btn-delete").onclick = () => eliminarUsuario(usuario.id);
+
+            tbody.appendChild(fila);
+
+        });
+
+    } catch (error) {
+
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" style="text-align:center;color:red">
+                    Error al conectar con el servidor.
+                </td>
+            </tr>
+        `;
+
     }
 
-    // CREAR O ACTUALIZAR (CREATE / UPDATE)
-    document.getElementById('formRegistro').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        
-        const id = document.getElementById('userId').value;
-        const payload = {
-            cedula: document.getElementById('cedula').value,
-            nombre: document.getElementById('nombre').value,
-            email: document.getElementById('email').value,
-            edad: parseInt(document.getElementById('edad').value),
-            ciudad: document.getElementById('ciudad').value,
-            telefono: document.getElementById('telefono').value
-        };
+}
 
-        const esEdicion = id !== "";
-        const url = esEdicion ? `${BACKEND_URL}/${id}` : BACKEND_URL;
-        const method = esEdicion ? 'PUT' : 'POST';
+document.getElementById("formRegistro").addEventListener("submit", async function(e){
 
-        try {
-            const response = await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+    e.preventDefault();
 
-            const data = await response.json();
-            
-            if (response.ok) {
-                mostrarMensaje(esEdicion ? "Registro actualizado." : "Registro creado con éxito.");
-                resetForm();
-                obtenerUsuarios();
-            } else {
-                mostrarMensaje(data.error || "Ocurrió un problema.", true);
-            }
-        } catch (error) {
-            mostrarMensaje("Error de comunicación con el servidor.", true);
-        }
-    });
+    const boton = document.getElementById("btnSubmit");
 
-    // BORRAR (DELETE)
-    async function eliminarUsuario(id) {
-        if (!confirm("¿Seguro que deseas eliminar este usuario?")) return;
-        try {
-            const response = await fetch(`${BACKEND_URL}/${id}`, { method: 'DELETE' });
-            if (response.ok) {
-                mostrarMensaje("Usuario eliminado correctamente.");
-                obtenerUsuarios();
-            } else {
-                mostrarMensaje("No se pudo eliminar el usuario.", true);
-            }
-        } catch (error) {
-            mostrarMensaje("Error de red al intentar borrar.", true);
-        }
+    boton.disabled = true;
+
+    const id = document.getElementById("userId").value;
+
+    const datos = {
+
+        cedula: document.getElementById("cedula").value.trim(),
+        nombre: document.getElementById("nombre").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        edad: parseInt(document.getElementById("edad").value),
+        ciudad: document.getElementById("ciudad").value.trim(),
+        telefono: document.getElementById("telefono").value.trim()
+
+    };
+
+    if(Object.values(datos).some(v => v === "" || v === null || Number.isNaN(v))){
+        mostrarMensaje("Complete todos los campos.", true);
+        boton.disabled = false;
+        return;
     }
 
-    // Lógica visual para cambiar el formulario al modo edición
-    function prepararEdicion(id, cedula, nombre, email, edad, ciudad, telefono) {
-        document.getElementById('userId').value = id;
-        document.getElementById('cedula').value = cedula;
-        document.getElementById('nombre').value = nombre;
-        document.getElementById('email').value = email;
-        document.getElementById('edad').value = edad;
-        document.getElementById('ciudad').value = ciudad;
-        document.getElementById('telefono').value = telefono;
+    const metodo = id ? "PUT" : "POST";
+    const url = id ? `${BACKEND_URL}/${id}` : BACKEND_URL;
 
-        document.getElementById('formTitle').innerText = "Editar Registro";
-        document.getElementById('btnSubmit').innerText = "Actualizar Datos";
-        document.getElementById('btnCancelar').style.display = "block";
+    try{
+
+        const respuesta = await fetch(url,{
+
+            method: metodo,
+
+            headers:{
+                "Content-Type":"application/json"
+            },
+
+            body: JSON.stringify(datos)
+
+        });
+
+        const resultado = await respuesta.json();
+
+        if(!respuesta.ok)
+            throw new Error(resultado.error);
+
+        mostrarMensaje(id ? "Usuario actualizado." : "Usuario registrado.");
+
+        limpiarFormulario();
+
+        obtenerUsuarios();
+
+    }catch(error){
+
+        mostrarMensaje(error.message,true);
+
     }
 
-    function resetForm() {
-        document.getElementById('formRegistro').reset();
-        document.getElementById('userId').value = "";
-        document.getElementById('formTitle').innerText = "Nuevo Registro";
-        document.getElementById('btnSubmit').innerText = "Guardar Registro";
-        document.getElementById('btnCancelar').style.display = "none";
+    boton.disabled = false;
+
+});
+
+async function eliminarUsuario(id){
+
+    if(!confirm("¿Desea eliminar este usuario?"))
+        return;
+
+    try{
+
+        const respuesta = await fetch(`${BACKEND_URL}/${id}`,{
+
+            method:"DELETE"
+
+        });
+
+        if(!respuesta.ok)
+            throw new Error();
+
+        mostrarMensaje("Usuario eliminado.");
+
+        obtenerUsuarios();
+
+    }catch{
+
+        mostrarMensaje("No fue posible eliminar.",true);
+
     }
+
+}
+
+function prepararEdicion(usuario){
+
+    document.getElementById("userId").value = usuario.id;
+    document.getElementById("cedula").value = usuario.cedula;
+    document.getElementById("nombre").value = usuario.nombre;
+    document.getElementById("email").value = usuario.email;
+    document.getElementById("edad").value = usuario.edad;
+    document.getElementById("ciudad").value = usuario.ciudad;
+    document.getElementById("telefono").value = usuario.telefono;
+
+    document.getElementById("formTitle").innerHTML = "Editar Registro";
+    document.getElementById("btnSubmit").innerHTML = "Actualizar";
+    document.getElementById("btnCancelar").style.display = "block";
+
+}
+
+function resetForm(){
+
+    limpiarFormulario();
+
+}
 </script>
-
-</body>
-</html>
