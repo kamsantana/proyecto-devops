@@ -27,13 +27,18 @@ jobs:
               sudo apt-get update && sudo apt-get install -y git
             fi
 
+            # 🛠️ SOLUCCIÓN CRÍTICA: Forzar la remoción de cualquier contenedor llamado traefik colgado en el sistema
+            if [ "$(docker ps -a -q -f name=^traefik$)" ]; then
+              echo "Removiendo contenedor conflictivo previo..."
+              docker rm -f traefik || true
+            fi
+
             # 1. Moverse a la carpeta o clonar si es la primera ejecución
             if [ ! -d "proyecto" ]; then
               git clone https://github.com/${{ github.repository }} proyecto
               cd proyecto
             else
               cd proyecto
-              # Detener servicios viejos para liberar nombres y puertos en conflicto
               docker compose down || true
               git reset --hard HEAD
               git pull origin main
