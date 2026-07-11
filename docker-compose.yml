@@ -8,11 +8,11 @@ networks:
 
 services:
   traefik:
-    image: traefik:v2.10
+    image: traefik:v2.2
     container_name: traefik
     restart: always
     environment:
-      - DOCKER_API_VERSION=1.40 # 👈 ARREGLO CRUCIAL: Fuerza la compatibilidad con el Docker de tu VPS
+      - DOCKER_API_VERSION=1.40
     command:
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
