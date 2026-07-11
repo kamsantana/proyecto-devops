@@ -1,0 +1,39 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del código
+        uses: actions/checkout@v4
+
+      - name: Ejecutar despliegue automatizado en VPS (Contraseña)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_SSH_PORT }}
+          script: |
+            # 1. Moverse a la carpeta o clonar si es la primera ejecución
+            if [ ! -d "proyecto" ]; then
+              git clone https://github.com/${{ github.repository }} proyecto
+              cd proyecto
+            else
+              cd proyecto
+              git reset --hard HEAD
+              git pull origin main
+            fi
+
+            # 2. Asegurar requerimientos de infraestructura en el VPS
+            docker network create traefik-public || true
+            mkdir -p letsencrypt
+
+            # 3. Reconstruir imágenes y encender el ecosistema
+            docker compose up -d --build
