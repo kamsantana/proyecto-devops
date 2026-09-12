@@ -1,6 +1,6 @@
 # Proyecto DevOps - CRUD de Usuarios
 
-**Autores:** Kevin Adrian Santana Maldonado, Alex Robinson Zaruma Suntasig
+**Autores:** Kevin Adrian Santana Maldonado, Alex Robinson Zaruma Suntasigs
 
 ## Descripción
 
